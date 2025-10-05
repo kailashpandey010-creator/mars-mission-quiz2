@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mars Mission Quiz Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+<style>
+body {
+  font-family:'Orbitron',sans-serif;
+  margin:0; padding:0; color:#fff;
+  overflow-x:hidden;
+  background:#000;
+}
+
+/* 🌌 Animated starry background */
+body::before {
+  content:"";
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:
+    radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 70% 80%, #fffa, transparent),
+    radial-gradient(1.2px 1.2px at 40% 60%, #ffccaa, transparent),
+    radial-gradient(1.8px 1.8px at 80% 20%, #fff, transparent);
+  background-size:200px 200px;
+  animation: twinkle 6s infinite linear;
+  z-index:-2;
+}
+
+@keyframes twinkle {
+  0% {opacity:0.8;}
+  50% {opacity:0.4;}
+  100% {opacity:0.8;}
+}
+
+/* 🌄 Mars ground gradient */
+body::after {
+  content:"";
+  position:fixed;
+  bottom:0; left:0; right:0; height:45%;
+  background:linear-gradient(to top, #c1440e 0%, #d85c27 60%, transparent 100%);
+  z-index:-1;
+}
+
+/* 🚀 Colony banner */
+header {
+  background:url('istockphoto-876272908-612x612.jpg') no-repeat center center;
+  background-size:cover;
+  height:320px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 25px rgba(0,0,0,0.8);
+}
+header h1 {
+  background:rgba(0,0,0,0.6);
+  padding:15px 25px;
+  border-radius:12px;
+  font-size:2.2em;
+  color:#ffcc00;
+  text-shadow:2px 2px #ff4500;
+}
+
+/* 📦 Quiz box */
+#game {
+  max-width:800px; margin:40px auto; padding:20px;
+  background:rgba(0,0,0,0.85);
+  border-radius:15px; border:3px solid #ff4500;
+  box-shadow:0 0 40px rgba(255,69,0,0.9);
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow {
+  0% { box-shadow:0 0 30px rgba(255,69,0,0.7); }
+  100% { box-shadow:0 0 50px rgba(255,140,0,0.9); }
+}
+
+h2 {text-align:center; color:#ffcc00; font-size:2em; margin-bottom:10px; text-shadow:2px 2px #ff4500;}
+#materials {background:rgba(255,255,255,0.08); padding:12px; border-radius:10px; margin-bottom:15px; font-size:0.95em; line-height:1.5;}
+
+.card {
+  background:rgba(50,0,0,0.85); border-radius:12px; padding:15px; margin-bottom:20px;
+  border:2px solid #ff4500; box-shadow:0 0 15px rgba(255,69,0,0.7);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.card:hover {transform:scale(1.02); box-shadow:0 0 30px rgba(255,140,0,1);}
+
+label {
+  display:block; margin:8px 0; cursor:pointer; padding:6px 10px; border-radius:6px;
+  transition:background 0.2s,color 0.2s,transform 0.2s;
+}
+label:hover {background:rgba(255,69,0,0.8); color:#fff; transform:scale(1.02);}
+input[type="checkbox"],input[type="radio"]{margin-right:8px;}
+
+button {
+  margin:10px 5px 0; padding:10px 25px; background:#ff4500; border:none; border-radius:10px;
+  font-weight:bold; cursor:pointer; font-size:1em; transition: background 0.2s, transform 0.2s;
+}
+button:hover {background:#ff6347; transform:scale(1.05);}
+
+#message {margin-top:15px; font-size:1.15em; min-height:2.2em; text-align:center;}
+.pass {color:#00ff7f; font-weight:700;}
+.fail {color:#ff4040; font-weight:700;}
+.correct-answers {color:#ffd966; font-weight:600; margin-top:6px;}
+
+#progress-container {width:100%; background:rgba(255,255,255,0.2); border-radius:10px; overflow:hidden; margin-bottom:15px;}
+#progress-bar {width:0%; height:15px; background:#ff4500; transition:width 0.5s;}
+</style>
+</head>
+<body>
+
+<!-- Mars Colony Banner -->
+<header>
+  <h1>Welcome to Mars Colony 🌌</h1>
+</header>
+
+<!-- Quiz Game Box -->
+<div id="game">
+<h2>🚀 Mars Mission Quiz</h2>
+<div id="progress-container"><div id="progress-bar"></div></div>
+<div id="materials">
+<h3>Materials You Have:</h3>
+<p>1. Plastic, 2. Rock, 3. Martian regolith, 4. Recycled water, 5. Metal, 6. Paper, 7. Carbon, 8. Motor, 9. Carbon fibre, 10. Air cushion, 11. Wire, 12. Wheels, 13. Nylon/Polyester, 14. Computer chips, 15. Urine, 16. Foams, 17. Air cushion, 18. Bubble wrap, 19. Cardboard, 20. Cargo bags</p>
+</div>
+<div id="question-area"></div>
+</div>
+
+<script>
+let score=0;
+let currentQ=0;
+let answers={};
+
+const questions=[
+{ text:"Which of the above materials can be used for making chairs, beds, and comfort materials by modification?", options:["air cushion","carbon fibre","metal","bubble wrap","cargo bags","plastic","rock"], correct:["air cushion","carbon fibre","metal","bubble wrap","cargo bags"], multi:true },
+{ text:"Which material can be used to make Brick which can be used to make shelters on Mars?", options:["martian regolith","recycled water","plastic","carbon","metal","nylon","rock"], correct:["martian regolith","recycled water","plastic","carbon"], multi:true },
+{ text:"Can we get rid of human poop?", options:["yes","no"], correct:["yes"], multi:false, followUp:{ text:"How can we get rid of human poop?", options:["dumping on mars","using as fertilizer directly","by making agro soil by decomposing it","reusing like urine"], correct:["by making agro soil by decomposing it"], multi:false } },
+{ text:"What can the 3-D cube structure be used for?", options:["no use","show piece","structure for making storage container"], correct:["structure for making storage container"], multi:false },
+{ text:"Astronauts need to make a furnace (metal melting) station. How will you make it? Choose two materials.", options:["rock", "fire<oxygen + fuel", "electricity", "copper coil"], correct:["electricity", "copper coil"], multi:true },
+{ text:"There are abundant rovers on Mars of no use. How can you reuse them?", options:["cannot be reused", "by scrapping them", "by making assistant robots for astronauts"], correct:["by making assistant robots for astronauts"], multi:false },
+{ text:"Which of the following can be made from motor from rovers, metal pieces and electricity?", options:["cooler", "toy", "paper and plastic shredder"], correct:["paper and plastic shredder"], multi:false },
+{ text:"What can plastic pieces be used for? (Choose 3)", options:["making brick", "insulations", "fertilizer", "party material", "medical use"], correct:["making brick","insulations","party material"], multi:true }
+];
+
+function prettify(name){return name.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');}
+function updateProgress(){document.getElementById('progress-bar').style.width=`${Math.floor((currentQ/questions.length)*100)}%`;}
+
+function loadQuestion(qIndex=currentQ){
+updateProgress();
+const q=questions[qIndex];
+let html=`<div class="card"><h3>Question ${qIndex+1}:</h3><p>${q.text}</p><div id="options">`;
+q.options.forEach(opt=>{
+let type=q.multi?"checkbox":"radio";
+let checked=answers[qIndex]&&answers[qIndex].includes(opt)?"checked":"";
+html+=`<label><input type="${type}" name="q${qIndex}" value="${opt}" ${checked}> ${prettify(opt)}</label>`;
+});
+html+=`</div>
+<button id="submitBtn">Submit</button>
+${qIndex>0?'<button id="prevBtn">Previous</button>':''}
+${qIndex<questions.length-1?'<button id="nextBtn">Next</button>':''}
+<p id="message"></p></div>`;
+document.getElementById("question-area").innerHTML=html;
+
+document.getElementById("submitBtn").addEventListener("click",()=>{checkAnswer(qIndex);});
+if(qIndex>0) document.getElementById("prevBtn").addEventListener("click",()=>{currentQ--; loadQuestion(currentQ);});
+if(qIndex<questions.length-1) document.getElementById("nextBtn").addEventListener("click",()=>{currentQ++; loadQuestion(currentQ);});
+}
+
+function getSelected(){return Array.from(document.querySelectorAll("#options input:checked")).map(cb=>cb.value);}
+function showMessage(html,className=""){let msg=document.getElementById("message"); msg.className=className; msg.innerHTML=html;}
+function disableInputs(){document.querySelectorAll("#options input").forEach(i=>i.disabled=true); document.getElementById("submitBtn").disabled=true; let nextBtn=document.getElementById("nextBtn"); if(nextBtn) nextBtn.disabled=true; let prevBtn=document.getElementById("prevBtn"); if(prevBtn) prevBtn.disabled=true;}
+
+function checkAnswer(qIndex){
+const q=questions[qIndex];
+const selected=getSelected();
+answers[qIndex]=selected;
+const correct=q.correct;
+const exactMatch=correct.length===selected.length && correct.every(ans=>selected.includes(ans));
+
+if(exactMatch){score++; showMessage("✅ Mission Passed! +1 Point","pass"); disableInputs();
+if(q.followUp && selected.includes("yes")){setTimeout(()=>{loadFollowUp(q.followUp,qIndex);},1000);}else{setTimeout(()=>{nextQuestion();},1500);}
+}else{const correctDisplay=correct.map(prettify).join(", "); showMessage(`❌ Mission Failed! No point.<div class="correct-answers">Correct: ${correctDisplay}</div>`,"fail"); disableInputs(); setTimeout(()=>{nextQuestion();},1500);}
+}
+
+function nextQuestion(){if(currentQ<questions.length-1){currentQ++; loadQuestion(currentQ);}else{showFinalScore();}}
+
+function loadFollowUp(fq,qIndex){
+let html=`<div class="card"><h3>Follow-Up:</h3><p>${fq.text}</p><div id="options">`;
+fq.options.forEach(opt=>{let checked=answers["followUp"]&&answers["followUp"].includes(opt)?"checked":""; html+=`<label><input type="radio" name="followUp" value="${opt}" ${checked}> ${prettify(opt)}</label>`;});
+html+=`</div><button id="submitFollow">Submit</button>
+${qIndex>0?'<button id="prevBtn">Previous</button>':''}
+${qIndex<questions.length-1?'<button id="nextBtn">Next</button>':''}
+<p id="message"></p></div>`;
+document.getElementById("question-area").innerHTML=html;
+
+document.getElementById("submitFollow").addEventListener("click",()=>{
+const selected=getSelected();
+answers["followUp"]=selected;
+const exactMatch=fq.correct.length===selected.length && fq.correct.every(ans=>selected.includes(ans));
+if(exactMatch){score++; showMessage("✅ Mission Passed! +1 Point","pass");}
+else{const correctDisplay=fq.correct.map(prettify).join(", "); showMessage(`❌ Mission Failed! No point.<div class="correct-answers">Correct: ${correctDisplay}</div>`,"fail");}
+disableInputs();
+setTimeout(()=>{nextQuestion();},1500);
+});
+
+if(qIndex>0) document.getElementById("prevBtn").addEventListener("click",()=>{loadQuestion(qIndex);});
+if(qIndex<questions.length-1) document.getElementById("nextBtn").addEventListener("click",()=>{currentQ++; loadQuestion(currentQ);});
+}
+
+function showFinalScore(){
+updateProgress();
+document.getElementById("question-area").innerHTML=`<div class="card"><h3>🚀 Mission Complete!</h3><p>Your total score: ${score} / ${questions.length}</p></div>`;
+}
+
+loadQuestion();
+</script>
+</body>
+</html>
